@@ -1,4 +1,4 @@
-.PHONY: miner test image clean fmt
+.PHONY: miner test image clean fmt generate
 
 miner:
 	go build -o build/miner
@@ -12,5 +12,8 @@ image:
 clean:
 	rm -rf build/*
 
+generate:
+	go generate ./...
+
 fmt:
-	go fmt github.com/CommonProsperity/Miner
+	go fmt github.com/CommonProsperity/Miner/...
