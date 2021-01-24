@@ -3,11 +3,17 @@ package tests
 import (
 	"net"
 	"net/http"
+	"net/url"
 
 	"github.com/CommonProsperity/Miner/crawler"
 	"github.com/CommonProsperity/Miner/crawler/mocks"
 	"github.com/golang/mock/gomock"
+	log "github.com/sirupsen/logrus"
 )
+
+func init() {
+	log.SetLevel(log.DebugLevel)
+}
 
 // this is not a beautiful fixture
 // the fucking colly doesn't offer an interface for its controller
@@ -34,6 +40,10 @@ func newFixture(ctrl *gomock.Controller) *fixture {
 	return f
 }
 
-func (f *fixture) GetCompleteURL(resource string) string {
-	return "http://" + f.listener.Addr().String() + resource
+func (f *fixture) GetCompleteURL(resource string) *url.URL {
+	return &url.URL{
+		Scheme: "http",
+		Host:   f.listener.Addr().String(),
+		Path:   resource,
+	}
 }

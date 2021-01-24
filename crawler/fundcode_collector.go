@@ -15,7 +15,7 @@ func toBasicFund(elements []*otto.Value) (*BasicFund, error) {
 	}
 	for i, e := range elements {
 		if !e.IsString() {
-			return nil, errors.New(fmt.Sprintf("toBasicFund Error: element(%d) is not string", i))
+			return nil, fmt.Errorf("toBasicFund Error: element(%d) is not string", i)
 		}
 	}
 	bf := &BasicFund{
@@ -72,7 +72,7 @@ func (cl *crawlerImpl) GetAllBasicFund(sync bool) {
 		cl.mCollectors[basicFundCollector] = c
 	}
 
-	c.Visit(URLCenter[FundCodeSearch])
+	c.Visit(URLCenter[FundCodeSearch].String())
 	if sync {
 		c.Wait()
 	}

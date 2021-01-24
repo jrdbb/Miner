@@ -1,5 +1,6 @@
 package crawler
 
 const (
-	basicFundCollector string = "basicFundCollector"
+	basicFundCollector    string = "basicFundCollector"
+	historyValueCollector string = "historyValueCollector"
 )
