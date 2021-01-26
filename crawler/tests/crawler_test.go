@@ -63,6 +63,7 @@ func TestHistoryValue(t *testing.T) {
 			func(arg *crawler.ApiData) {
 				Convey("check history value", t, func() {
 					So(arg, ShouldNotBeNil)
+					So(arg.Code, ShouldEqual, code)
 					So(len(arg.Content), ShouldEqual, 10)
 					So(arg.CurrPage, ShouldEqual, 1)
 					So(arg.Records, ShouldEqual, 4637)

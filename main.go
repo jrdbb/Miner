@@ -1,55 +1,110 @@
 package main
 
 import (
-	"context"
+	"bufio"
+	"flag"
 	"fmt"
+	"os"
 	"time"
 
+	"github.com/CommonProsperity/Miner/crawler"
 	"github.com/influxdata/influxdb-client-go/v2"
+	"github.com/influxdata/influxdb-client-go/v2/api"
+	log "github.com/sirupsen/logrus"
 )
 
-func main() {
-	// Create a new client using an InfluxDB server base URL and an authentication token
-	client := influxdb2.NewClient("http://localhost:8086", "my-token")
-	// Use blocking write client for writes to desired bucket
-	writeAPI := client.WriteAPIBlocking("my-org", "my-bucket")
-	// Create point using full params constructor
-	p := influxdb2.NewPoint("stat",
-		map[string]string{"unit": "temperature"},
-		map[string]interface{}{"avg": 24.5, "max": 45.0},
-		time.Now())
-	// write point immediately
-	writeAPI.WritePoint(context.Background(), p)
-	// Create point using fluent style
-	p = influxdb2.NewPointWithMeasurement("stat").
-		AddTag("unit", "temperature").
-		AddField("avg", 23.2).
-		AddField("max", 45.0).
-		SetTime(time.Now())
-	writeAPI.WritePoint(context.Background(), p)
+var (
+	influxAddr = flag.String("influxAddr", "127.0.0.1:8080", "The influx db address in the format of host:port")
+	influxToken = flag.String("influxToken", "", "The influx db token")
+	sdate = flag.String("sdate", "2020-01-01", "start date")
+	edate = flag.String("edate", "2020-02-01", "end date")
+	logFile    = flag.String("logFile", "", "The log file of GoDock")
+	logLevel   = flag.String("logLevel", "Info", "The log level. (Debug/Info/Warn/Error)")
+)
 
-	// Or write directly line protocol
-	line := fmt.Sprintf("stat,unit=temperature avg=%f,max=%f", 23.5, 45.0)
-	writeAPI.WriteRecord(context.Background(), line)
-
-	// Get query client
-	queryAPI := client.QueryAPI("my-org")
-	// Get parser flux query result
-	result, err := queryAPI.Query(context.Background(), `from(bucket:"my-bucket")|> range(start: -1h) |> filter(fn: (r) => r._measurement == "stat")`)
-	if err == nil {
-		// Use Next() to iterate over query result lines
-		for result.Next() {
-			// Observe when there is new grouping key producing new table
-			if result.TableChanged() {
-				fmt.Printf("table: %s\n", result.TableMetadata().String())
-			}
-			// read result
-			fmt.Printf("row: %s\n", result.Record().String())
+func initLog() {
+	log.SetFormatter(&log.JSONFormatter{})
+	if *logFile == "" {
+		log.SetOutput(os.Stdout)
+	} else {
+		f, err := os.OpenFile(*logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		if err != nil {
+			panic(fmt.Sprintf("error opening logFile(%s): %v", *logFile, err))
 		}
-		if result.Err() != nil {
-			fmt.Printf("Query error: %s\n", result.Err().Error())
-		}
+		log.SetOutput(f)
 	}
-	// Ensures background processes finishes
-	client.Close()
+
+	if *logLevel == "Debug" {
+		log.SetLevel(log.DebugLevel)
+	} else if *logLevel == "Info" {
+		log.SetLevel(log.InfoLevel)
+	} else if *logLevel == "Warn" {
+		log.SetLevel(log.WarnLevel)
+	} else if *logLevel == "Error" {
+		log.SetLevel(log.ErrorLevel)
+	} else {
+		panic(fmt.Sprintf("Unknown logLevel: %s", *logLevel))
+	}
+}
+
+func init() {
+	flag.Parse()
+	initLog()
+}
+
+type callback struct {
+	crl crawler.FundCrawler
+	fundDefAPI api.WriteAPI
+	fundValueAPI api.WriteAPI
+}
+
+func (cb *callback) OnBasicFund(funds []*crawler.BasicFund){
+	for _, fund := range funds {
+		p := influxdb2.NewPoint(
+			"Fund",
+			map[string]string{"id": fund.ID},
+			map[string]interface{}{"id": fund.ID, "name_cn": fund.NameCN, "name_py": fund.NamePY},
+			time.Now(),
+		)
+		cb.fundDefAPI.WritePoint(p)
+	}
+
+	for _, fund := range funds {
+		cb.crl.GetHistoryValue(false, fund.ID, 1, *sdate, *edate)
+	}
+}
+
+func (cb *callback) OnHistoryValue(apiData *crawler.ApiData){
+	for _, v := range apiData.Content {
+		p := influxdb2.NewPoint(
+			"FundValue",
+			map[string]string{"id": apiData.Code},
+			map[string]interface{}{"value": v.NetAssetValue},
+			v.Date,
+		)
+		cb.fundDefAPI.WritePoint(p)
+	}
+
+	if apiData.CurrPage < apiData.Pages {
+		cb.crl.GetHistoryValue(false, apiData.Code, int(apiData.CurrPage) + 1, *sdate, *edate)
+	}
+}
+
+func main() {
+	client := influxdb2.NewClient(*influxAddr, *influxToken)
+	defer client.Close()
+
+	crl := crawler.NewFundCrawler()
+	crl.SetCallBack(&callback{
+		crl: crl,
+		fundDefAPI: client.WriteAPI("CommonProsperity", "fund_def"),
+		fundValueAPI: client.WriteAPI("CommonProsperity", "fund_history_value"),
+	})
+
+	crl.GetAllBasicFund(false)
+
+	fmt.Println("stop by enter")
+    input := bufio.NewScanner(os.Stdin)
+    input.Scan()
+    fmt.Println("stoping")
 }

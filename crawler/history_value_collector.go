@@ -14,6 +14,7 @@ import (
 )
 
 type ApiData struct {
+	Code     string
 	Content  []FundValue
 	Records  int64
 	Pages    int64
@@ -102,6 +103,7 @@ func (cl *crawlerImpl) GetHistoryValue(sync bool, code string, page int, sdate s
 				log.Errorf("GetHistoryValue Err(%v)", err)
 				return
 			}
+			data.Code = r.Request.URL.Query().Get("code")
 			cl.mCallBack.OnHistoryValue(data)
 		})
 
