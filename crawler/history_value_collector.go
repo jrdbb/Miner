@@ -116,7 +116,7 @@ func (cl *crawlerImpl) GetHistoryValue(sync bool, code string, page int, sdate s
 			cl.mCallBack.OnHistoryValue(data)
 		})
 
-		cl.mCollectors[basicFundCollector] = c
+		cl.mCollectors[historyValueCollector] = c
 	}
 	target := *URLCenter[HistoryValue]
 	qry := target.Query()
@@ -128,8 +128,18 @@ func (cl *crawlerImpl) GetHistoryValue(sync bool, code string, page int, sdate s
 	qry.Add("per", "49")
 	target.RawQuery = qry.Encode()
 
-	c.Visit(target.String())
 	if sync {
+		c.Visit(target.String())
 		c.Wait()
+	} else {
+		cl.mQueue.AddURL(target.String())
 	}
+}
+
+func (cl *crawlerImpl) ConsumeHistoryValueQueue() {
+	c, ok := cl.mCollectors[historyValueCollector]
+	if !ok {
+		log.Fatalf("ConsumeHistoryValueQueue: historyValueCollector is not set")
+	}
+	cl.mQueue.Run(c)
 }

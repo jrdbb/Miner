@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"flag"
 	"fmt"
@@ -76,8 +75,9 @@ func (cb *callback) OnBasicFund(funds []*crawler.BasicFund) {
 	}
 
 	for _, fund := range funds {
-		cb.crl.GetHistoryValue(true, fund.ID, 1, *sdate, *edate)
+		cb.crl.GetHistoryValue(false, fund.ID, 1, *sdate, *edate)
 	}
+	cb.crl.ConsumeHistoryValueQueue()
 }
 
 func (cb *callback) OnHistoryValue(apiData *crawler.ApiData) {
@@ -93,7 +93,7 @@ func (cb *callback) OnHistoryValue(apiData *crawler.ApiData) {
 	}
 
 	if apiData.CurrPage < apiData.Pages {
-		cb.crl.GetHistoryValue(true, apiData.Code, int(apiData.CurrPage)+1, *sdate, *edate)
+		cb.crl.GetHistoryValue(false, apiData.Code, int(apiData.CurrPage)+1, *sdate, *edate)
 	}
 }
 
@@ -116,8 +116,12 @@ func main() {
 
 	crl.GetAllBasicFund(true)
 
-	fmt.Println("stop by enter")
-	input := bufio.NewScanner(os.Stdin)
-	input.Scan()
+	fmt.Println("wait for exit signal")
+	c := make(chan os.Signal, 1)
+	for sig := range c {
+		if sig == os.Interrupt {
+			break
+		}
+	}
 	fmt.Println("stoping")
 }

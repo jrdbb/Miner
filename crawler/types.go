@@ -29,6 +29,7 @@ type FundCrawler interface {
 	SetCallBack(FundCrawlerCallBack)
 	GetAllBasicFund(sync bool)
 	GetHistoryValue(sync bool, code string, page int, sdate string, edate string)
+	ConsumeHistoryValueQueue()
 }
 
 type FundValue struct {
