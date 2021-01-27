@@ -114,7 +114,7 @@ func main() {
 		fundValueAPI: client.WriteAPI("", *db + "/fund_history_value"),
 	})
 
-	crl.GetAllBasicFund(false)
+	crl.GetAllBasicFund(true)
 
 	fmt.Println("stop by enter")
     input := bufio.NewScanner(os.Stdin)
