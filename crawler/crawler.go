@@ -1,7 +1,6 @@
 package crawler
 
 import (
-	"time"
 
 	"github.com/gocolly/colly/v2"
 )
@@ -15,8 +14,6 @@ func newDefaultCollector() *colly.Collector {
 	c.Limit(&colly.LimitRule{
 		DomainRegexp: ".*",
 		Parallelism:  1,
-		// Delay:      1 * time.Millisecond,
-		RandomDelay: 100 * time.Millisecond,
 	})
 
 	return c
