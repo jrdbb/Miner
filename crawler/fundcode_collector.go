@@ -21,8 +21,8 @@ func toBasicFund(elements []*otto.Value) (*BasicFund, error) {
 	bf := &BasicFund{
 		ID:        elements[0].String(),
 		ShortCode: elements[1].String(),
-		Type:      elements[2].String(),
-		NameCN:    elements[3].String(),
+		NameCN:    elements[2].String(),
+		Type:      elements[3].String(),
 		NamePY:    elements[4].String(),
 	}
 	return bf, nil
@@ -32,10 +32,9 @@ func (cl *crawlerImpl) GetAllBasicFund(sync bool) {
 	log.Debugf("Start collecting all basic fund")
 	c, ok := cl.mCollectors[basicFundCollector]
 	if !ok {
-		vm := otto.New()
 		c = newDefaultCollector()
 		c.OnResponse(func(r *colly.Response) {
-			log.Infof("GetAllBasicFund OnResponse")
+			vm := otto.New()
 			_, err := vm.Run(r.Body)
 			if err != nil {
 				log.Errorf("GetAllBasicFund Err(%v)", err)

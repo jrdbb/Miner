@@ -1,21 +1,25 @@
 package crawler
 
 import (
+	"time"
+
 	"github.com/gocolly/colly/v2"
-	"github.com/gocolly/colly/v2/debug"
-	log "github.com/sirupsen/logrus"
 )
 
 func newDefaultCollector() *colly.Collector {
-	return colly.NewCollector(
+	c := colly.NewCollector(
 		// Turn on asynchronous requests
 		colly.Async(),
-		// Attach a debugger to the collector
-		colly.Debugger(&debug.LogDebugger{
-			Prefix: "CollyDebug",
-			Output: log.StandardLogger().Out,
-		}),
 	)
+	// Limit the number of threads started by colly to two
+	c.Limit(&colly.LimitRule{
+		DomainRegexp: ".*",
+		Parallelism: 5,
+		Delay:      1 * time.Millisecond,
+		RandomDelay: 100 * time.Millisecond,
+	})
+
+	return c
 }
 
 type crawlerImpl struct {

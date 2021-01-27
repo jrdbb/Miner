@@ -7,8 +7,8 @@ type BasicFund struct {
 	ShortCode string
 
 	// TODO: could it be enum?
-	Type   string
 	NameCN string
+	Type   string
 	// pin yin name
 	NamePY string
 }

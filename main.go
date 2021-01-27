@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -14,12 +15,15 @@ import (
 )
 
 var (
-	influxAddr = flag.String("influxAddr", "127.0.0.1:8080", "The influx db address in the format of host:port")
-	influxToken = flag.String("influxToken", "", "The influx db token")
+	influxAddr = flag.String("influxAddr", "http://127.0.0.1:8080", "The influx db address in the format of host:port")
+	influxUserName = flag.String("influxUserName", "admin", "The influx db username")
+	influxPasswd = flag.String("influxPasswd", "admin", "The influx db passwd")
+	db = flag.String("db", "db0", "The influx db name")
 	sdate = flag.String("sdate", "2020-01-01", "start date")
 	edate = flag.String("edate", "2020-02-01", "end date")
 	logFile    = flag.String("logFile", "", "The log file of GoDock")
 	logLevel   = flag.String("logLevel", "Info", "The log level. (Debug/Info/Warn/Error)")
+	writeFundDef = flag.String("writeFundDef", "false", "Write Fund Def to database")
 )
 
 func initLog() {
@@ -59,14 +63,16 @@ type callback struct {
 }
 
 func (cb *callback) OnBasicFund(funds []*crawler.BasicFund){
-	for _, fund := range funds {
-		p := influxdb2.NewPoint(
-			"Fund",
-			map[string]string{"id": fund.ID},
-			map[string]interface{}{"id": fund.ID, "name_cn": fund.NameCN, "name_py": fund.NamePY},
-			time.Now(),
-		)
-		cb.fundDefAPI.WritePoint(p)
+	if *writeFundDef != "false" {
+		for _, fund := range funds {
+			p := influxdb2.NewPoint(
+				"Fund",
+				map[string]string{"id": fund.ID},
+				map[string]interface{}{"id": fund.ID, "name_cn": fund.NameCN, "name_py": fund.NamePY},
+				time.Now(),
+			)
+			cb.fundDefAPI.WritePoint(p)
+		}
 	}
 
 	for _, fund := range funds {
@@ -75,6 +81,7 @@ func (cb *callback) OnBasicFund(funds []*crawler.BasicFund){
 }
 
 func (cb *callback) OnHistoryValue(apiData *crawler.ApiData){
+	log.Infof("Load History Value code(%s) num(%d)", apiData.Code, len(apiData.Content))
 	for _, v := range apiData.Content {
 		p := influxdb2.NewPoint(
 			"FundValue",
@@ -82,7 +89,7 @@ func (cb *callback) OnHistoryValue(apiData *crawler.ApiData){
 			map[string]interface{}{"value": v.NetAssetValue},
 			v.Date,
 		)
-		cb.fundDefAPI.WritePoint(p)
+		cb.fundValueAPI.WritePoint(p)
 	}
 
 	if apiData.CurrPage < apiData.Pages {
@@ -91,14 +98,20 @@ func (cb *callback) OnHistoryValue(apiData *crawler.ApiData){
 }
 
 func main() {
-	client := influxdb2.NewClient(*influxAddr, *influxToken)
+	client := influxdb2.NewClient(*influxAddr, fmt.Sprintf("%s:%s",*influxUserName, *influxPasswd))
 	defer client.Close()
+
+	healthCheck, err := client.Health(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Info(healthCheck)
 
 	crl := crawler.NewFundCrawler()
 	crl.SetCallBack(&callback{
 		crl: crl,
-		fundDefAPI: client.WriteAPI("CommonProsperity", "fund_def"),
-		fundValueAPI: client.WriteAPI("CommonProsperity", "fund_history_value"),
+		fundDefAPI: client.WriteAPI("", *db + "/fund_def"),
+		fundValueAPI: client.WriteAPI("", *db + "/fund_history_value"),
 	})
 
 	crl.GetAllBasicFund(false)

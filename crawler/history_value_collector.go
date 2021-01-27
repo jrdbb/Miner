@@ -85,9 +85,9 @@ func (cl *crawlerImpl) GetHistoryValue(sync bool, code string, page int, sdate s
 	log.Debugf("Start collecting history value")
 	c, ok := cl.mCollectors[historyValueCollector]
 	if !ok {
-		vm := otto.New()
 		c = newDefaultCollector()
 		c.OnResponse(func(r *colly.Response) {
+			vm := otto.New()
 			_, err := vm.Run(r.Body)
 			if err != nil {
 				log.Errorf("GetHistoryValue Err(%v)", err)
@@ -109,13 +109,14 @@ func (cl *crawlerImpl) GetHistoryValue(sync bool, code string, page int, sdate s
 
 		cl.mCollectors[basicFundCollector] = c
 	}
-	target := URLCenter[HistoryValue]
+	target := *URLCenter[HistoryValue]
 	qry := target.Query()
 	qry.Add("type", "lsjz")
 	qry.Add("code", code)
 	qry.Add("page", strconv.Itoa(page))
 	qry.Add("sdate", sdate)
 	qry.Add("edate", edate)
+	qry.Add("per", "49")
 	target.RawQuery = qry.Encode()
 
 	c.Visit(target.String())
