@@ -14,7 +14,7 @@ func newDefaultCollector() *colly.Collector {
 	// Limit the number of threads started by colly to two
 	c.Limit(&colly.LimitRule{
 		DomainRegexp: ".*",
-		Parallelism: 1,
+		Parallelism:  1,
 		// Delay:      1 * time.Millisecond,
 		RandomDelay: 100 * time.Millisecond,
 	})

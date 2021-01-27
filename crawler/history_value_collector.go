@@ -54,10 +54,19 @@ func toApiData(jsValue *otto.Value) (*ApiData, error) {
 			err = fmt.Errorf("toApiData: convert netAssetValue(%s) to float fail", tds[1].Data)
 			return
 		}
+
+		dailyDelta, err := strconv.ParseFloat(strings.Trim(tds[3].Data, "%"), 64)
+		if err != nil {
+			err = fmt.Errorf("toApiData: convert dailyDelta(%s) to float fail", tds[3].Data)
+			return
+		}
+
+		dailyDelta = dailyDelta / 100 // .%
 		log.Debugf("toApiData: process %v", tds)
 		content = append(content, FundValue{
 			Date:          dt,
 			NetAssetValue: netAssetValue,
+			DailyDelta:    dailyDelta,
 			BuyState:      tds[4].Data,
 			SellState:     tds[5].Data,
 		})
