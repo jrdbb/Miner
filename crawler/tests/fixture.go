@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/CommonProsperity/Miner/crawler"
-	"github.com/CommonProsperity/Miner/crawler/mocks"
+	"github.com/jrdbb/Miner/crawler"
+	"github.com/jrdbb/Miner/crawler/mocks"
 	"github.com/golang/mock/gomock"
 	log "github.com/sirupsen/logrus"
 )

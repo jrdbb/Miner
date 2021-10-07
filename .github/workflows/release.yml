@@ -19,7 +19,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v1
         with:
-          submodules: 'true'
+          submodules: "true"
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
@@ -38,7 +38,7 @@ jobs:
       - name: Create package
         id: package
         run: |
-          PACKAGE_NAME=commonprosperity.miner.${GITHUB_REF#refs/tags/}.${{ matrix.goos }}.${{ matrix.goarch }}.tar.gz
+          PACKAGE_NAME=miner.${GITHUB_REF#refs/tags/}.${{ matrix.goos }}.${{ matrix.goarch }}.tar.gz
           cp README.md build/
           cp LICENSE build/
           tar -czvf $PACKAGE_NAME -C build .

@@ -1,4 +1,4 @@
-module github.com/CommonProsperity/Miner
+module github.com/jrdbb/Miner
 
 go 1.14
 

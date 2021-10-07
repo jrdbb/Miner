@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/CommonProsperity/Miner/crawler"
+	"github.com/jrdbb/Miner/crawler"
 	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/goconvey/convey"
 	// log "github.com/sirupsen/logrus"

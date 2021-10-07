@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/CommonProsperity/Miner/crawler"
+	"github.com/jrdbb/Miner/crawler"
 	"github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api"
 	log "github.com/sirupsen/logrus"
